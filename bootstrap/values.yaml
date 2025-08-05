@@ -13,10 +13,10 @@ user:
 default:
   environment: prod
   source:
-    repoURL: https://github.com/rhpds/ocp-virt-advanced-ops-gitops.git
+    repoURL: https://github.com/rhpds/ocp-virt-advanced-ops-hub-gitops.git
     targetRevision: main
   git:
-    url: https://github.com/rhpds/ocp-virt-advanced-ops-gitops.git
+    url: https://github.com/rhpds/ocp-virt-advanced-ops-hub-gitops.git
     revision: main
   namespace: openshift-gitops
 
