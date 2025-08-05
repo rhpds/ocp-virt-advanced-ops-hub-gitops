@@ -1,0 +1,338 @@
+# setup namespaces and users
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team1
+  labels:
+    team: team1
+---
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: team1-devs
+users:
+- user1
+---
+# rbac to give team1-devs access to team1 namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: team1
+  name: team1-devs-namespace-team1
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# setup cluster sets
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSet
+metadata:
+  name: team1
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: team1
+  namespace: team1
+spec:
+  clusterSet: team1
+---
+# created automatically when the managedclusterset is created
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    cluster.open-cluster-management.io/clusterset: team1
+    cluster.open-cluster-management.io/role: admin
+  name: open-cluster-management:managedclusterset:admin:team1
+rules:
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resourceNames:
+  - team1
+  resources:
+  - managedclustersets
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resourceNames:
+  - team1
+  resources:
+  - managedclustersets/join
+  verbs:
+  - create
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resourceNames:
+  - team1
+  resources:
+  - managedclustersets/bind
+  verbs:
+  - create
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - create
+- apiGroups:
+  - register.open-cluster-management.io
+  resources:
+  - managedclusters/accept
+  verbs:
+  - update
+- apiGroups:
+  - clusterview.open-cluster-management.io
+  resources:
+  - managedclustersets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: team1-devs-clusterset-admin-role
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: open-cluster-management:managedclusterset:admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: team1-devs-clusterset-admin-clusterset
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: open-cluster-management:managedclusterset:admin:team1
+  apiGroup: rbac.authorization.k8s.io
+---
+# setup hypershift RBAC
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hypershift-cluster-creator
+  namespace: team1
+rules:
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  - hostedclusters/status
+  - hostedclusters/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: team1
+  name: hypershift-cluster-creator-binding
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: hypershift-cluster-creator
+  apiGroup: rbac.authorization.k8s.io
+---
+# multicluster engine reader for UI
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mce-reader
+rules:
+- apiGroups:
+  - multicluster.openshift.io
+  resources:
+  - multiclusterengines
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mce-reader-binding-team1-devs
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: mce-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: managed-cluster-addon-reader
+rules:
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - managedclusteraddons
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: managed-cluster-addon-reader-team1-devs-binding
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: managed-cluster-addon-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# nodepool creator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nodepools-creator
+  namespace: team1
+rules:
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nodepools-creator-binding-team1-devs
+  namespace: team1
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: nodepools-creator
+  apiGroup: rbac.authorization.k8s.io
+---
+# nodepool reader
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-nodepools-reader
+  namespace: team1
+rules:
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nodepools-reader-binding-team1-devs
+  namespace: team1
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-nodepools-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# UI show subscriptions reader
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: subscription-reader
+rules:
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: subscription-reader-binding-user1
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: subscription-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# pontetially missing Hypershift rbac
+---
+# grant read on search resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: search-read
+rules:
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: search-read
+subjects:
+- kind: Group
+  name: team1-devs
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: search-read
+  apiGroup: rbac.authorization.k8s.io
