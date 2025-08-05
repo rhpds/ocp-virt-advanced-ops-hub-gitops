@@ -1,0 +1,23 @@
+{{- $app := index .Values.applications "rhacm_config" }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rhacm-config
+  namespace: openshift-gitops
+spec:
+  project: default
+  {{- include "app.source" (dict "root" $ "app" $app) | nindent 2 }}
+    helm:
+      values: |
+        user:
+          count: {{ .Values.user.count }}
+          base: {{ .Values.user.base }}
+        deployer:
+          domain: {{ .Values.deployer.domain }}
+          apiUrl: {{ .Values.deployer.apiUrl }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ $app.destination.namespace }}
+  syncPolicy:
+    automated: {}
