@@ -9,8 +9,9 @@ metadata:
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
+  name: openshift-config
   name: multicluster-observability-job
   annotations:
     argocd.argoproj.io/hook: PostSync
@@ -46,7 +47,7 @@ spec:
         - -c
         - |
           set -euxo pipefail
-          DOCKER_CONFIG_JSON=$(oc extract secret/multiclusterhub-operator-pull-secret -n open-cluster-management --to=-)
+          DOCKER_CONFIG_JSON=$(oc extract secret/pull-secret -n openshift-config --to=-)
           oc create secret generic multiclusterhub-operator-pull-secret \
               -n open-cluster-management-observability \
               --from-literal=.dockerconfigjson="$DOCKER_CONFIG_JSON" \
