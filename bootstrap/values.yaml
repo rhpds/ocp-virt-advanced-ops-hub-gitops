@@ -27,6 +27,12 @@ applications:
     destination:
       namespace: open-cluster-management
 
+  multicluster_observability:
+    source:
+      path: multicluster-observability
+    destination:
+      namespace: open-cluster-management-observability
+
   sso_users:
     source:
       path: sso-users
