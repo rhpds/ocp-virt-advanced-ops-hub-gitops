@@ -7,7 +7,7 @@ deployer:
   apiUrl: https://api.cluster-guid.sandbox.opentlc.com:6443
 
 user:
-  count: 0
+  count: 10
   base: user
 
 default:
@@ -26,3 +26,15 @@ applications:
       path: rhacm-config
     destination:
       namespace: open-cluster-management
+
+  sso_users:
+    source:
+      path: sso-users
+    destination:
+      namespace: rhsso
+    users:
+      - username: ssoadmin
+        password: password
+        email: ssoadmin@rhdp.com
+        admin: true
+        realm: rhdp

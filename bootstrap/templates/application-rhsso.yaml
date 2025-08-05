@@ -22,6 +22,21 @@ spec:
             email: ssoadmin@rhdp.com
             admin: true
             realm: rhdp
+          # create users range of named users from values.yaml here
+          {{- range $user := .Values.applications.sso_users.users }}
+          - username: {{ $user.username }}
+            password: {{ $user.password }}
+            admin: {{ $user.admin }}
+            realm: {{ $user.realm }}
+          {{- end }}
+          # loop of generated numbered users
+          {{- $max_users := ( add ( int .Values.user.count ) 1 ) }}
+          {{- range $user_index := untilStep 1 ( int $max_users ) 1 }}
+          - username: user{{ $user_index }}
+            password: password
+            admin: false
+            realm: rhdp
+          {{- end }}
         oauth:
           issuer: https://keycloak-rhsso.{{ .Values.deployer.domain }}/auth/realms/rhdp
         helper-status-checker:
