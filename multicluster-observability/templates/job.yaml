@@ -48,6 +48,7 @@ spec:
         - |
           set -euxo pipefail
           DOCKER_CONFIG_JSON=$(oc extract secret/pull-secret -n openshift-config --to=-)
+          oc delete secret multiclusterhub-operator-pull-secret -n open-cluster-management-observability
           oc create secret generic multiclusterhub-operator-pull-secret \
               -n open-cluster-management-observability \
               --from-literal=.dockerconfigjson="$DOCKER_CONFIG_JSON" \
