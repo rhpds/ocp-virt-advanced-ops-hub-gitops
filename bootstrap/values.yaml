@@ -25,4 +25,4 @@ applications:
     source:
       path: rhacm-config
     destination:
-      namespace: default
+      namespace: open-cluster-management
