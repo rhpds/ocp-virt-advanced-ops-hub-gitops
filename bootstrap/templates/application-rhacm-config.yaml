@@ -21,3 +21,5 @@ spec:
     namespace: {{ $app.destination.namespace }}
   syncPolicy:
     automated: {}
+    syncOptions:
+    - CreateNamespace=true
