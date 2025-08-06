@@ -46,27 +46,42 @@ spec:
         - /bin/sh
         - -c
         - |
+          # step 1
+          # Load up multiclusterhub-operator-pull-secret with cluster-config pull secret
+          # set -euxo pipefail
+          NAMESPACE="open-cluster-management-observability"
+
           DOCKER_CONFIG_JSON=$(oc extract secret/pull-secret -n openshift-config --to=-)
 
           # try to delete secret, don't fail on error
-          oc delete secret multiclusterhub-operator-pull-secret -n open-cluster-management-observability || true
+          oc delete secret multiclusterhub-operator-pull-secret -n $NAMESPACE || true
 
           oc create secret generic multiclusterhub-operator-pull-secret \
-              -n open-cluster-management-observability \
-              --from-literal=.dockerconfigjson="$DOCKER_CONFIG_JSON" \
-              --type=kubernetes.io/dockerconfigjson
+            -n $NAMESPACE \
+            --from-literal=.dockerconfigjson="$DOCKER_CONFIG_JSON" \
+            --type=kubernetes.io/dockerconfigjson
 
-#            BUCKET_NAME=$(oc get objectbucketclaim observer-bucket -n open-cluster-management-observability -o jsonpath='{.spec.objectBucketName}')
-#            BUCKET_HOST=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n open-cluster-management-observability -o jsonpath='{.status.host}')
-#            BUCKET_PORT=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n open-cluster-management-observability -o jsonpath='{.status.port}')
-#
-#            ACCESS_KEY=$(oc get objectbucketclaim observer-bucket -n open-cluster-management-observability -o jsonpath='{.spec.additionalConfig.accessKey}')
-#            SECRET_KEY=$(oc get objectbucketclaim observer-bucket -n open-cluster-management-observability -o jsonpath='{.spec.additionalConfig.secretKey}')
-#
-#            oc create secret generic thanos-object-store \
-#                -n open-cluster-management-observability \
-#                --from-literal=thanos.yaml: ="$ACCESS_KEY" \
-#                --from-literal=secret_key="$SECRET_KEY" \
-#                --from-literal=bucket="$BUCKET_NAME" \
-#                --from-literal=endpoint="$BUCKET_HOST:$BUCKET_PORT" \
-#                --from-literal=insecure="true"
+          # step 2
+          # Load up thanos-object-store secret with object store credentials and bucket info
+
+          BUCKET_NAME=$(oc get objectbucketclaim observer-bucket -n $NAMESPACE -o jsonpath='{.spec.objectBucketName}')
+          BUCKET_HOST=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n $NAMESPACE -o jsonpath='{.spec.endpoint.bucketHost}')
+          BUCKET_PORT=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n $NAMESPACE -o jsonpath='{.spec.endpoint.bucketPort}')
+
+          ACCESS_KEY=$(oc get secret observer-bucket -n $NAMESPACE -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
+          SECRET_KEY=$(oc get secret observer-bucket -n $NAMESPACE -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
+          echo "$BUCKET_NAME $BUCKET_HOST $BUCKET_PORT $ACCESS_KEY $SECRET_KEY"
+
+          oc delete secret thanos-object-store -n $NAMESPACE || true
+          oc create secret generic thanos-object-store \
+            -n open-cluster-management-observability \
+            --from-literal=thanos.yaml="|
+            type: s3
+            config:
+              bucket: $BUCKET_NAME
+              endpoint: $BUCKET_HOST:$BUCKET_PORT
+              insecure: true
+              access_key: $ACCESS_KEY
+              secret_key: $SECRET_KEY
+              http_config:
+                insecure_skip_verify: true"
