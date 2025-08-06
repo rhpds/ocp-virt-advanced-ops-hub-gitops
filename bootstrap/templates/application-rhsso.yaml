@@ -17,11 +17,6 @@ spec:
           # startingCSV: rhsso-operator.x.y.z
           installPlanApproval: Manual
         users:
-          - username: ssoadmin
-            password: password
-            email: ssoadmin@rhdp.com
-            admin: true
-            realm: rhdp
           # create users range of named users from values.yaml here
           {{- range $user := .Values.applications.sso_users.users }}
           - username: {{ $user.username }}
