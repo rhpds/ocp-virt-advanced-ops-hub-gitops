@@ -84,4 +84,5 @@ config:
   access_key: $ACCESS_KEY
   secret_key: $SECRET_KEY
   http_config:
-    insecure_skip_verify: true"
+    insecure_skip_verify: true
+            "
