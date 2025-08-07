@@ -1,0 +1,49 @@
+# job to enable vm management in rhacm
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: enable-vm-mgmnt
+  namespace: {{ .Values.namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: enable-vm-mgmnt
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: multicluster-observability-job
+  namespace: {{ .Values.namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enable-vm-mgmnt
+  namespace: {{ .Values.namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: multicluster-observability-job
+      restartPolicy: Never
+      containers:
+      - name: ansible
+        image: image-registry.openshift-image-registry.svc:5000/openshift/cli
+        command:
+        - /bin/sh
+        - -c
+        - |
+          oc annotate search search-v2-operator -n open-cluster-management virtual-machine-preview='true'
