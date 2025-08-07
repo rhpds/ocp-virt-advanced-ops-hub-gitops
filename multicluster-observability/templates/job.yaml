@@ -4,18 +4,18 @@ kind: ServiceAccount
 metadata:
   name: multicluster-observability-job
   namespace: {{ .Values.namespace }}
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+  # annotations:
+  #   argocd.argoproj.io/hook: PostSync
+  #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: openshift-config
   name: multicluster-observability-job
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+  # annotations:
+  #   argocd.argoproj.io/hook: PostSync
+  #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -30,9 +30,9 @@ kind: Job
 metadata:
   name: multicluster-observability-job
   namespace: {{ .Values.namespace }}
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+  # annotations:
+  #   argocd.argoproj.io/hook: PostSync
+  #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   backoffLimit: 3
   template:
