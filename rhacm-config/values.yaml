@@ -9,3 +9,5 @@ deployer:
 user:
   count: 0
   base: user
+
+namespace: open-cluster-management
