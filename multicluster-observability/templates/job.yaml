@@ -33,7 +33,7 @@ metadata:
   #   argocd.argoproj.io/hook: PostSync
   #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
-  backoffLimit: 3
+  backoffLimit: 1
   template:
     spec:
       serviceAccountName: multicluster-observability-job
@@ -50,39 +50,41 @@ spec:
           # set -euxo pipefail
           NAMESPACE="open-cluster-management-observability"
 
-          DOCKER_CONFIG_JSON=$(oc extract secret/pull-secret -n openshift-config --to=-)
-
-          # try to delete secret, don't fail on error
-          oc delete secret multiclusterhub-operator-pull-secret -n $NAMESPACE || true
-
-          oc create secret generic multiclusterhub-operator-pull-secret \
-            -n $NAMESPACE \
-            --from-literal=.dockerconfigjson="$DOCKER_CONFIG_JSON" \
-            --type=kubernetes.io/dockerconfigjson
-
-          # step 2
-          # Load up thanos-object-storage secret with object store credentials and bucket info
-          # ts=2025-08-07T17:43:33.099679964Z caller=main.go:145 level=error err="yaml: unmarshal errors:\n line 1: cannot unmarshal !!str `type: s...` into client.BucketConfig\nparsing config YAML file\ngithub.com/thanos-io/objstore/client.NewBucket\n\t/workspace/vendor/github.com/thanos-io/objstore/client/factory.go:57\nmain.runCompact\n\t/workspace/cmd/thanos/compact.go:209\nmain.registerCompact.func1\n\t/workspace/cmd/thanos/compact.go:98\nmain.main\n\t/workspace/cmd/thanos/main.go:143\nruntime.main\n\t/usr/lib/golang/src/runtime/proc.go:272\nruntime.goexit\n\t/usr/lib/golang/src/runtime/asm_amd64.s:1700\npreparing compact command failed\nmain.main\n\t/workspace/cmd/thanos/main.go:145\nruntime.main\n\t/usr/lib/golang/src/runtime/proc.go:272\nruntime.goexit\n\t/usr/lib/golang/src/runtime/asm_amd64.s:1700"
-
-          BUCKET_NAME=$(oc get objectbucketclaim observer-bucket -n $NAMESPACE -o jsonpath='{.spec.objectBucketName}')
-          BUCKET_HOST=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n $NAMESPACE -o jsonpath='{.spec.endpoint.bucketHost}')
-          BUCKET_PORT=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n $NAMESPACE -o jsonpath='{.spec.endpoint.bucketPort}')
+          # DOCKER_CONFIG_JSON=$(oc extract secret/pull-secret -n openshift-config --to=-)
+          #
+          # # try to delete secret, don't fail on error
+          # oc delete secret multiclusterhub-operator-pull-secret -n $NAMESPACE || true
+          #
+          # oc create secret generic multiclusterhub-operator-pull-secret \
+          #   -n $NAMESPACE \
+          #   --from-literal=.dockerconfigjson="$DOCKER_CONFIG_JSON" \
+          #   --type=kubernetes.io/dockerconfigjson
+          #
+          # # step 2
+          # # Load up thanos-object-storage secret with object store credentials and bucket info
+          #
+          BUCKET_NAME=$(oc get cm observer-bucket -n $NAMESPACE -o jsonpath='{.data.BUCKET_NAME}')
+          BUCKET_HOST=$(oc get cm observer-bucket -n $NAMESPACE -o jsonpath='{.data.BUCKET_HOST}')
+          BUCKET_PORT=$(oc get cm observer-bucket -n $NAMESPACE -o jsonpath='{.data.BUCKET_PORT}')
 
           ACCESS_KEY=$(oc get secret observer-bucket -n $NAMESPACE -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
           SECRET_KEY=$(oc get secret observer-bucket -n $NAMESPACE -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
           echo "$BUCKET_NAME $BUCKET_HOST $BUCKET_PORT $ACCESS_KEY $SECRET_KEY"
 
+          cat << EOF > thanos.yaml
+          type: s3
+          config:
+            bucket: $BUCKET_NAME
+            endpoint: s3.openshift-storage.svc:443
+            access_key: $ACCESS_KEY
+            secret_key: $SECRET_KEY
+            http_config:
+              insecure_skip_verify: true
+          EOF
+          echo "thanos.yaml:\n$(cat thanos.yaml)"
+          echo "now try to make secret"
+
           oc delete secret thanos-object-storage -n $NAMESPACE || true
           oc create secret generic thanos-object-storage \
             -n open-cluster-management-observability \
-            --from-literal=thanos.yaml="|
-type: s3
-config:
-  bucket: $BUCKET_NAME
-  endpoint: $BUCKET_HOST:$BUCKET_PORT
-  insecure: true
-  access_key: $ACCESS_KEY
-  secret_key: $SECRET_KEY
-  http_config:
-    insecure_skip_verify: true
-            "
+            --from-file=thanos.yaml
