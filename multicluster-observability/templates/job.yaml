@@ -61,7 +61,7 @@ spec:
             --type=kubernetes.io/dockerconfigjson
 
           # step 2
-          # Load up thanos-object-store secret with object store credentials and bucket info
+          # Load up thanos-object-storage secret with object store credentials and bucket info
 
           BUCKET_NAME=$(oc get objectbucketclaim observer-bucket -n $NAMESPACE -o jsonpath='{.spec.objectBucketName}')
           BUCKET_HOST=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n $NAMESPACE -o jsonpath='{.spec.endpoint.bucketHost}')
@@ -71,8 +71,8 @@ spec:
           SECRET_KEY=$(oc get secret observer-bucket -n $NAMESPACE -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
           echo "$BUCKET_NAME $BUCKET_HOST $BUCKET_PORT $ACCESS_KEY $SECRET_KEY"
 
-          oc delete secret thanos-object-store -n $NAMESPACE || true
-          oc create secret generic thanos-object-store \
+          oc delete secret thanos-object-storage -n $NAMESPACE || true
+          oc create secret generic thanos-object-storage \
             -n open-cluster-management-observability \
             --from-literal=thanos.yaml="|
             type: s3
