@@ -62,6 +62,7 @@ spec:
 
           # step 2
           # Load up thanos-object-storage secret with object store credentials and bucket info
+          # ts=2025-08-07T17:43:33.099679964Z caller=main.go:145 level=error err="yaml: unmarshal errors:\n line 1: cannot unmarshal !!str `type: s...` into client.BucketConfig\nparsing config YAML file\ngithub.com/thanos-io/objstore/client.NewBucket\n\t/workspace/vendor/github.com/thanos-io/objstore/client/factory.go:57\nmain.runCompact\n\t/workspace/cmd/thanos/compact.go:209\nmain.registerCompact.func1\n\t/workspace/cmd/thanos/compact.go:98\nmain.main\n\t/workspace/cmd/thanos/main.go:143\nruntime.main\n\t/usr/lib/golang/src/runtime/proc.go:272\nruntime.goexit\n\t/usr/lib/golang/src/runtime/asm_amd64.s:1700\npreparing compact command failed\nmain.main\n\t/workspace/cmd/thanos/main.go:145\nruntime.main\n\t/usr/lib/golang/src/runtime/proc.go:272\nruntime.goexit\n\t/usr/lib/golang/src/runtime/asm_amd64.s:1700"
 
           BUCKET_NAME=$(oc get objectbucketclaim observer-bucket -n $NAMESPACE -o jsonpath='{.spec.objectBucketName}')
           BUCKET_HOST=$(oc get objectbucket obc-open-cluster-management-observability-observer-bucket -n $NAMESPACE -o jsonpath='{.spec.endpoint.bucketHost}')
@@ -75,12 +76,12 @@ spec:
           oc create secret generic thanos-object-storage \
             -n open-cluster-management-observability \
             --from-literal=thanos.yaml="|
-            type: s3
-            config:
-              bucket: $BUCKET_NAME
-              endpoint: $BUCKET_HOST:$BUCKET_PORT
-              insecure: true
-              access_key: $ACCESS_KEY
-              secret_key: $SECRET_KEY
-              http_config:
-                insecure_skip_verify: true"
+type: s3
+config:
+  bucket: $BUCKET_NAME
+  endpoint: $BUCKET_HOST:$BUCKET_PORT
+  insecure: true
+  access_key: $ACCESS_KEY
+  secret_key: $SECRET_KEY
+  http_config:
+    insecure_skip_verify: true"
