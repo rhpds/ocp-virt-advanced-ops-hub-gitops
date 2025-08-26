@@ -15,7 +15,7 @@ spec:
         namespace: rhsso
         operator:
           # startingCSV: rhsso-operator.x.y.z
-          installPlanApproval: Manual
+          installPlanApproval: Automatic
         users:
           # create users range of named users from values.yaml here
           {{- range $user := .Values.applications.sso_users.users }}
