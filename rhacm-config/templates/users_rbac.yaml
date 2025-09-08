@@ -13,6 +13,12 @@ metadata:
   name: team1-devs
 users:
 - user1
+- user2
+- user3
+- user4
+- user5
+- user6
+- user7
 ---
 # rbac to give team1-devs access to team1 namespace
 apiVersion: rbac.authorization.k8s.io/v1
@@ -348,7 +354,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: subscription-reader-binding-user1
+  name: subscription-reader-binding-group1-devs
 subjects:
 - kind: Group
   name: team1-devs
