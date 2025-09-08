@@ -12,13 +12,10 @@ kind: Group
 metadata:
   name: team1-devs
 users:
-- user1
-- user2
-- user3
-- user4
-- user5
-- user6
-- user7
+{{- $max_users := ( add ( int .Values.user.count ) 1 ) -}}
+{{- range $user_index := untilStep 1 ( int $max_users ) 1 }}
+- {{ $.Values.user.base }}{{ . }}
+{{- end }}
 ---
 # rbac to give team1-devs access to team1 namespace
 apiVersion: rbac.authorization.k8s.io/v1
@@ -42,7 +39,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: team1
+  name: legacy-systems-inc
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta2
 kind: ManagedClusterSetBinding
@@ -50,10 +47,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: team1
+  name: leagcy-systems-inc
   namespace: team1
 spec:
-  clusterSet: team1
+  clusterSet: legacy-systems-inc
 ---
 # created automatically when the managedclusterset is created
 apiVersion: rbac.authorization.k8s.io/v1
@@ -70,7 +67,7 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resourceNames:
-  - team1
+  - legacy-systems-inc
   resources:
   - managedclustersets
   verbs:
@@ -79,7 +76,7 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resourceNames:
-  - team1
+  - legacy-systems-inc
   resources:
   - managedclustersets/join
   verbs:
@@ -87,7 +84,7 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resourceNames:
-  - team1
+  - legacy-systems-inc
   resources:
   - managedclustersets/bind
   verbs:
@@ -142,7 +139,7 @@ subjects:
   apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: open-cluster-management:managedclusterset:admin:team1
+  name: open-cluster-management:managedclusterset:admin:legacy-systems-inc
   apiGroup: rbac.authorization.k8s.io
 ---
 # setup hypershift RBAC

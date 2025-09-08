@@ -7,7 +7,7 @@ deployer:
   apiUrl: https://api.cluster-guid.sandbox.opentlc.com:6443
 
 user:
-  count: 0
+  count: 10
   base: user
 
 namespace: open-cluster-management
