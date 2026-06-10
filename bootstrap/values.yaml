@@ -14,10 +14,10 @@ default:
   environment: prod
   source:
     repoURL: https://github.com/rhpds/ocp-virt-advanced-ops-hub-gitops.git
-    targetRevision: main
+    targetRevision: rhacm-2.16
   git:
     url: https://github.com/rhpds/ocp-virt-advanced-ops-hub-gitops.git
-    revision: main
+    revision: rhacm-2.16
   namespace: openshift-gitops
 
 applications:
